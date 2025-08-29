@@ -3,34 +3,32 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Générateur de fiches – Guitare‑Voix (v4)</title>
-  <!-- UI -->
+  <title>Générateur de fiches – Guitare-Voix (fixed4)</title>
+
+  <!-- Tailwind for styles -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Libs (defer pour garantir l'ordre) -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+  <!-- Export libs -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
   <style>
-    :root { --bg:#0a0a0a; --card:#111214; --muted:#9ca3af; --text:#f8fafc; --accent:#f59e0b; --pill-bg:rgba(245,158,11,.15); --border:#1f2937; }
-    .light { --bg:#f8fafc; --card:#ffffff; --muted:#475569; --text:#0f172a; --accent:#b45309; --pill-bg:rgba(212,163,2,.15); --border:#e5e7eb; }
+    :root { --bg:#0a0a0a; --card:#111214; --muted:#9ca3af; --text:#f8fafc; --accent:#d4a252; --pill-bg:rgba(212,162,82,.18); --border:#1f2937; }
+    .light { --bg:#f8fafc; --card:#ffffff; --muted:#475569; --text:#0f172a; --accent:#d4a252; --pill-bg:rgba(212,162,82,.18); --border:#e5e7eb; }
     body { background:var(--bg); color:var(--text); }
     .card { background:var(--card); border:1px solid var(--border); }
     .muted { color:var(--muted); }
     .accent { color:var(--accent); }
-    .btn-gold { background:var(--accent); color:#111; }
-    .btn-gold:hover { filter:brightness(.95); }
-    .pill { background:var(--pill-bg); border:1px solid var(--accent); color:var(--accent); }
+    .pill { background:var(--pill-bg); border:1px solid var(--accent); color:var(--accent); display:inline-flex; align-items:center; justify-content:center; text-align:center; }
     .btn { border:1px solid var(--border); background:var(--card); }
+    .btn-gold { background:var(--accent); color:#111; font-weight:600; }
+    .btn:hover { filter:brightness(1.05); }
 
-    /* Lyrics layout */
     .lyrics-line { display:block; white-space:nowrap; }
     .word-wrap { display:inline-block; position:relative; padding-top:1.6rem; margin-right:.25rem; }
     .chord { position:absolute; top:0; left:0; right:0; text-align:center; font-weight:800; font-size:.9rem; line-height:1rem; color:var(--accent); }
-    .word { display:inline-block; }
     .lyrics-area { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
 
-    /* Impression : noir sur blanc par défaut */
-    @media print { 
-      :root { --accent:#000; --border:#000; --muted:#000; }
+    @media print {
       body{background:#fff!important;color:#000!important}
       #controls{display:none!important}
       #preview{box-shadow:none!important;background:#fff!important;color:#000!important}
@@ -41,28 +39,28 @@
   </style>
 </head>
 <body class="h-full">
-  <div id="app" class="mx-auto max-w-7xl p-4">
+  <div class="mx-auto max-w-7xl p-4">
     <!-- Header -->
     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
-      <h1 class="text-xl font-bold tracking-tight"><span class="accent">★</span> Générateur de fiches – Guitare‑Voix (v4)</h1>
+      <h1 class="text-xl font-bold tracking-tight"><span class="accent">★</span> Générateur de fiches – Guitare-Voix</h1>
       <div class="flex flex-wrap items-center gap-3 text-sm">
-        <label class="inline-flex items-center gap-2"><input id="themeToggle" type="checkbox" checked> Thème sombre <span class="muted">(noir & or)</span></label>
+        <label class="inline-flex items-center gap-2"><input id="themeToggle" type="checkbox" checked> Thème sombre</label>
         <label class="inline-flex items-center gap-2"><input id="exportWhiteToggle" type="checkbox" checked> Export PDF fond blanc</label>
         <button id="printBtn" class="px-3 py-1.5 rounded-lg bg-sky-500 text-black font-semibold">Imprimer (Ctrl+P)</button>
-        <span id="diagStatus" class="muted"></span>
       </div>
     </div>
 
     <!-- Controls -->
     <div id="controls" class="grid grid-cols-1 xl:grid-cols-4 gap-4 mb-6">
-      <!-- Identité du document -->
+      <!-- Identité -->
       <div class="card rounded-2xl p-4 space-y-3">
-        <h2 class="text-lg font-semibold">Identité du document</h2>
-        <div class="flex items-center gap-3"><label class="w-32 text-sm muted">Logo</label><input id="logoInput" type="file" accept="image/*" class="block w-full text-sm" /></div>
-        <div class="flex items-center gap-3"><label class="w-32 text-sm muted">Titre</label><input id="songTitle" class="w-full border rounded-lg px-3 py-2 text-sm bg-transparent" placeholder="Perfect" /></div>
-        <div class="flex items-center gap-3"><label class="w-32 text-sm muted">Artiste</label><input id="songArtist" class="w-full border rounded-lg px-3 py-2 text-sm bg-transparent" placeholder="Ed Sheeran" /></div>
-        <div class="flex items-center gap-3"><label class="w-32 text-sm muted">Tempo</label><input id="songTempo" class="w-28 border rounded-lg px-3 py-2 text-sm bg-transparent" placeholder="96" /><span class="muted text-sm">bpm</span></div>
-        <div class="flex items-center gap-3"><label class="w-32 text-sm muted">Mesure</label><input id="songMeter" class="w-28 border rounded-lg px-3 py-2 text-sm bg-transparent" placeholder="4/4" /><span class="muted text-sm">ex. 4/4, 3/4, 6/8…</span></div>
+        <h2 class="text-lg font-semibold">Identité</h2>
+        <div class="flex items-center gap-3"><label class="w-28 text-sm muted">Logo</label><input id="logoInput" type="file" accept="image/*" class="block w-full text-sm" /></div>
+        <div class="flex items-center gap-3"><label class="w-28 text-sm muted">Titre</label><input id="songTitle" class="w-full border rounded-lg px-3 py-2 text-sm bg-transparent" placeholder="Perfect" /></div>
+        <div class="flex items-center gap-3"><label class="w-28 text-sm muted">Artiste</label><input id="songArtist" class="w-full border rounded-lg px-3 py-2 text-sm bg-transparent" placeholder="Ed Sheeran" /></div>
+        <div class="flex items-center gap-3"><label class="w-28 text-sm muted">Tempo</label><input id="songTempo" class="w-24 border rounded-lg px-3 py-2 text-sm bg-transparent" placeholder="96" /><span class="muted text-sm">bpm</span></div>
+        <div class="flex items-center gap-3"><label class="w-28 text-sm muted">Mesure</label><input id="songMeter" class="w-24 border rounded-lg px-3 py-2 text-sm bg-transparent" placeholder="4/4" /><span class="muted text-sm">ex. 4/4, 3/4, 6/8…</span></div>
+        <div class="flex items-center gap-3"><label class="w-28 text-sm muted">Capo</label><input id="songCapo" class="w-24 border rounded-lg px-3 py-2 text-sm bg-transparent" placeholder="0" /><span class="muted text-sm">case</span></div>
       </div>
 
       <!-- Accords & Rythmique -->
@@ -74,71 +72,63 @@
         <label class="text-sm block">Rythmique (texte)
           <input id="rhythmText" class="mt-1 w-full border rounded-lg px-3 py-2 text-sm bg-transparent" placeholder="Feu de camp : Bas – Bas – Haut – Haut – Bas – Haut" />
         </label>
-        <div class="flex items-center gap-3"><label class="w-44 text-sm muted">Fiche rythmique (image)</label><input id="rhythmImage" type="file" accept="image/*" class="block w-full text-sm" /></div>
+        <div class="flex items-center gap-3"><label class="w-40 text-sm muted">Fiche rythmique (image)</label><input id="rhythmImage" type="file" accept="image/*" class="block w-full text-sm" /></div>
       </div>
 
-      <!-- Lyrics + Chords -->
+      <!-- Lyrics + actions -->
       <div class="card rounded-2xl p-4 space-y-3">
         <h2 class="text-lg font-semibold">Lyrics + Chords</h2>
-        <p class="text-sm muted">Colle les paroles et insère les accords <b>avant</b> le mot, entre crochets. Ex : <code class="px-1 rounded bg-black/20">[G]I found a [Em]love</code></p>
+        <p class="text-sm muted">Insère les accords <b>avant</b> le mot, entre crochets. Ex : <code class="px-1 rounded bg-black/20">[G]I found a [Em]love</code></p>
         <textarea id="lyricsInput" rows="10" class="lyrics-area w-full border rounded-lg px-3 py-2 text-sm bg-transparent" placeholder="[G]I found a [Em]love for me..."></textarea>
         <div class="flex flex-wrap gap-2">
-          <button id="renderBtn" class="px-3 py-2 rounded-xl btn-gold text-sm font-semibold">Rendre la fiche</button>
+          <button id="renderBtn" class="px-3 py-2 rounded-xl btn-gold text-sm">Rendre la fiche</button>
           <button id="exportBtn" class="px-3 py-2 rounded-xl bg-emerald-500 text-black text-sm font-semibold hover:brightness-95">Exporter en PDF</button>
         </div>
         <p class="text-xs muted">Raccourcis : <kbd class="px-1 border rounded">Ctrl</kbd> + <kbd class="px-1 border rounded">Enter</kbd> = rendre • <kbd class="px-1 border rounded">Ctrl</kbd> + <kbd class="px-1 border rounded">S</kbd> = PDF</p>
       </div>
 
-      <!-- Banque d'accords auto (SVG) + import/export -->
-      <div class="card rounded-2xl p-4 space-y-3">
-        <h2 class="text-lg font-semibold">Banque d'accords (auto)</h2>
-        <label class="inline-flex items-center gap-2 text-sm"><input id="autoBankToggle" type="checkbox" checked> Utiliser la banque auto (SVG)</label>
-        <div class="flex flex-wrap gap-2">
-          <button id="exportBankBtn" class="btn px-3 py-2 rounded-xl text-sm">Exporter banque (JSON)</button>
-          <button id="importBankBtn" class="btn px-3 py-2 rounded-xl text-sm">Importer banque (JSON)</button>
-        </div>
-        <div class="space-y-2">
-          <div class="text-sm muted">Ajouter un accord (manuel) :</div>
-          <div class="grid grid-cols-2 gap-2">
-            <input id="bankName" class="border rounded-lg px-3 py-2 text-sm bg-transparent" placeholder="Nom (ex. F)" />
-            <input id="bankBase" class="border rounded-lg px-3 py-2 text-sm bg-transparent" placeholder="Base (ex. 1)" />
-            <input id="bankFrets" class="border rounded-lg px-3 py-2 text-sm bg-transparent col-span-2" placeholder="Frets E–A–D–G–B–e (ex. x,x,3,2,1,1 pour F)" />
-            <input id="bankFingers" class="border rounded-lg px-3 py-2 text-sm bg-transparent col-span-2" placeholder="Doigts (ex. 1,3,4,2,1,1) – optionnel" />
-            <input id="bankBarres" class="border rounded-lg px-3 py-2 text-sm bg-transparent col-span-2" placeholder="Barres (ex. 1:6-1) – optionnel" />
+      <!-- Sélection des diagrammes + ordre -->
+      <div class="card rounded-2xl p-4 space-y-4 xl:col-span-4">
+        <div class="space-y-3">
+          <h2 class="text-lg font-semibold">Sélection des diagrammes</h2>
+          <div class="flex flex-wrap gap-2 mb-2">
+            <button id="selectAllBtn" class="btn px-2 py-1 rounded-lg text-sm">Tout sélectionner</button>
+            <button id="selectNoneBtn" class="btn px-2 py-1 rounded-lg text-sm">Tout désélectionner</button>
           </div>
-          <button id="addBankChordBtn" class="px-3 py-2 rounded-xl btn-gold text-sm font-semibold">Ajouter à la banque</button>
-          <p class="text-xs muted">Notation des frets : <code>x</code>=corde muette, <code>0</code>=corde à vide. Base=case de départ (1 = sillet). Exemple F simplifié : Base 1, Frets <code>x,x,3,2,1,1</code>.</p>
+          <div id="diagramChooser" class="flex flex-wrap gap-2"></div>
+        </div>
+
+        <div class="space-y-2">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="text-sm font-semibold">Ordre des accords</span>
+            <button id="orderFromLyricsBtn" class="btn px-2 py-1 rounded-lg text-sm">Depuis les paroles</button>
+            <button id="orderAlphaBtn" class="btn px-2 py-1 rounded-lg text-sm">A → Z</button>
+          </div>
+          <ul id="orderList" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2"></ul>
+          <p class="text-xs muted">Glisse-dépose les pastilles pour réordonner. L’affichage des diagrammes suit cet ordre.</p>
         </div>
       </div>
 
-      <!-- Sélection des diagrammes à afficher -->
+      <!-- Consignes -->
       <div class="card rounded-2xl p-4 space-y-3 xl:col-span-4">
-        <h2 class="text-lg font-semibold">Sélection des diagrammes</h2>
-        <p class="text-sm muted">Coche les accords dont tu veux afficher le diagramme. Par défaut, on propose ceux listés dans “Accords”.</p>
-        <div class="flex flex-wrap gap-2 mb-2">
-          <button id="selectAllBtn" class="btn px-2 py-1 rounded-lg text-sm">Tout sélectionner</button>
-          <button id="selectNoneBtn" class="btn px-2 py-1 rounded-lg text-sm">Tout désélectionner</button>
-          <button id="syncFromChordsBtn" class="btn px-2 py-1 rounded-lg text-sm">Synchroniser depuis “Accords”</button>
+        <h2 class="text-lg font-semibold">Consignes (chant, guitare, etc.)</h2>
+        <textarea id="instructionsInput" rows="4" class="w-full border rounded-lg px-3 py-2 text-sm bg-transparent" placeholder="Ex. Chant : respiration basse; Guitare : accent sur 2 et 4…"></textarea>
+      </div>
+
+      <!-- Songbox -->
+      <div class="card rounded-2xl p-4 space-y-3 xl:col-span-4">
+        <h2 class="text-lg font-semibold">Songbox (bibliothèque locale)</h2>
+        <div class="flex flex-wrap gap-2">
+          <button id="saveSongBtn" class="px-3 py-2 rounded-xl bg-emerald-500 text-black text-sm font-semibold">Enregistrer</button>
+          <button id="exportLibBtn" class="btn px-3 py-2 rounded-xl text-sm">Exporter</button>
+          <button id="importLibBtn" class="btn px-3 py-2 rounded-xl text-sm">Importer</button>
         </div>
-        <div id="diagramChooser" class="flex flex-wrap gap-2"></div>
+        <ul id="libraryList" class="mt-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2"></ul>
+        <p class="text-xs muted">Stockage dans le navigateur. Pense à exporter si tu changes d’ordi.</p>
       </div>
     </div>
 
-    <!-- Module Images de diagrammes (option) -->
-    <div class="card rounded-2xl p-4 mb-6">
-      <div class="flex items-center justify-between mb-3">
-        <h2 class="text-lg font-semibold">Diagrammes d'accords (images)</h2>
-        <div class="flex items-center gap-2 text-sm">
-          <input id="diagName" placeholder="Nom de l'accord (ex. G)" class="border rounded-lg px-3 py-1.5 bg-transparent"/>
-          <input id="diagFile" type="file" accept="image/*" class="text-sm"/>
-          <button id="addDiagBtn" class="px-3 py-2 rounded-xl btn-gold text-sm font-semibold">Ajouter</button>
-        </div>
-      </div>
-      <p class="text-xs muted mb-4">Si tu fournis une image pour un accord, elle **écrase** le rendu auto (SVG) de la banque.</p>
-      <div id="diagramsGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3"></div>
-    </div>
-
-    <!-- Preview / Sheet -->
+    <!-- Preview -->
     <div id="preview" class="card rounded-2xl shadow p-8 mx-auto max-w-[980px]">
       <div class="flex items-start gap-4">
         <img id="logoPreview" class="w-16 h-16 object-contain" alt="logo" />
@@ -176,101 +166,80 @@
         <h3 class="text-lg font-semibold mb-2">Paroles</h3>
         <div id="lyricsPreview" class="space-y-1 text-base leading-7"></div>
       </div>
-
-      <div id="footerNote" class="mt-8 text-xs muted">
-        <p>Astuce chant : garde une émission vocale détendue, mise sur la résonance plutôt que la force pour les passages aigus.</p>
-      </div>
-    </div>
-
-    <!-- Consignes (input, en bas pour rester visible) -->
-    <div class="card rounded-2xl p-4 mt-6">
-      <h2 class="text-lg font-semibold mb-2">Consignes (chant, guitare, etc.)</h2>
-      <textarea id="instructionsInput" rows="4" class="w-full border rounded-lg px-3 py-2 text-sm bg-transparent" placeholder="Ex. Chant : respiration basse, garde la mâchoire détendue. Guitare : accent sur 2 et 4, palm mute léger sur les ‘bas’."></textarea>
     </div>
   </div>
 
   <script>
-    // ===== Helpers libs loading & diagnostics =====
-    const statusEl = document.getElementById('diagStatus');
-    function getJsPDFCtor(){ return (window.jspdf && window.jspdf.jsPDF) ? window.jspdf.jsPDF : (window.jsPDF || null); }
-    async function waitForLibs(timeoutMs=5000){ const start = Date.now(); while(Date.now()-start<timeoutMs){ if(window.html2canvas && getJsPDFCtor()) return true; await new Promise(r=>setTimeout(r,100)); } return false; }
-    function updateDiag(){ const h2c = !!window.html2canvas; const jp = !!getJsPDFCtor(); statusEl.textContent = `Librairies: html2canvas ${h2c?'✓':'✗'} • jsPDF ${jp?'✓':'✗'}`; statusEl.className = `muted ${h2c && jp ? '' : 'text-red-400'}`; }
+    // ===== Theme
+    const htmlEl = document.documentElement;
+    function setTheme(isDark){ htmlEl.classList.toggle('light', !isDark); }
+    const themeToggle = document.getElementById('themeToggle');
+    themeToggle.addEventListener('change', ()=> setTheme(themeToggle.checked));
+    setTheme(true);
 
-    // ===== Theme handling =====
-    const htmlEl = document.documentElement; function setTheme(isDark){ htmlEl.classList.toggle('light', !isDark); }
-    const themeToggle = document.getElementById('themeToggle'); themeToggle.addEventListener('change', ()=> setTheme(themeToggle.checked)); setTheme(true);
-    const exportWhiteToggle = document.getElementById('exportWhiteToggle');
-
-    // ===== Elements =====
+    // ===== Elements
     const logoInput = document.getElementById('logoInput');
     const logoPreview = document.getElementById('logoPreview');
     const songTitle = document.getElementById('songTitle');
     const songArtist = document.getElementById('songArtist');
     const songTempo = document.getElementById('songTempo');
     const songMeter = document.getElementById('songMeter');
+    const songCapo = document.getElementById('songCapo');
     const chordsList = document.getElementById('chordsList');
     const rhythmText = document.getElementById('rhythmText');
     const rhythmImage = document.getElementById('rhythmImage');
+    const lyricsInput = document.getElementById('lyricsInput');
+    const instructionsInput = document.getElementById('instructionsInput');
 
     const titlePreview = document.getElementById('titlePreview');
     const metaPreview = document.getElementById('metaPreview');
     const chordsPreview = document.getElementById('chordsPreview');
     const rhythmTextPreview = document.getElementById('rhythmTextPreview');
     const rhythmImgPreview = document.getElementById('rhythmImgPreview');
+    const lyricsPreview = document.getElementById('lyricsPreview');
+    const instructionsPreview = document.getElementById('instructionsPreview');
 
-    const diagramsGrid = document.getElementById('diagramsGrid');
-    const diagramsPreview = document.getElementById('diagramsPreview');
     const diagramChooser = document.getElementById('diagramChooser');
     const selectAllBtn = document.getElementById('selectAllBtn');
     const selectNoneBtn = document.getElementById('selectNoneBtn');
-    const syncFromChordsBtn = document.getElementById('syncFromChordsBtn');
-
-    const diagName = document.getElementById('diagName');
-    const diagFile = document.getElementById('diagFile');
-    const addDiagBtn = document.getElementById('addDiagBtn');
-
-    const lyricsInput = document.getElementById('lyricsInput');
-    const lyricsPreview = document.getElementById('lyricsPreview');
-
-    const instructionsInput = document.getElementById('instructionsInput');
-    const instructionsPreview = document.getElementById('instructionsPreview');
 
     const renderBtn = document.getElementById('renderBtn');
     const exportBtn = document.getElementById('exportBtn');
     const printBtn = document.getElementById('printBtn');
 
-    // ===== State =====
-    const chordImages = {}; // images uploadées { 'G': dataURL }
-    const selectedChords = new Set(); // accords à afficher dans "Diagrammes"
+    // ===== State
+    const selectedChords = new Set();
+    let diagramOrder = []; // ordre explicite
 
-    // Banque auto (SVG)
+    // ===== Bank (SVG) — G updated 3–2–0–0–3–3
     const chordBank = {
-      // Majeurs
       'C': { base:1, frets:['x','3','2','0','1','0'], fingers:[0,3,2,0,1,0] },
       'D': { base:1, frets:['x','x','0','2','3','2'], fingers:[0,0,0,1,3,2] },
       'E': { base:1, frets:['0','2','2','1','0','0'], fingers:[0,2,3,1,0,0] },
-      'G': { base:1, frets:['3','2','0','0','0','3'], fingers:[3,2,0,0,0,4] },
+      'G': { base:1, frets:['3','2','0','0','3','3'], fingers:[3,2,0,0,3,4] },
       'A': { base:1, frets:['x','0','2','2','2','0'], fingers:[0,0,1,2,3,0] },
-      'F': { base:1, frets:['x','x','3','2','1','1'], fingers:[0,0,4,3,1,1], barres:[{fret:1, from:6, to:1, finger:1}] },
-      // Mineurs
+      'F': { base:1, frets:['1','3','3','2','1','1'], fingers:[1,3,4,2,1,1], barres:[{fret:1, from:6, to:1, finger:1}] },
       'Am':{ base:1, frets:['x','0','2','2','1','0'], fingers:[0,0,2,3,1,0] },
       'Em':{ base:1, frets:['0','2','2','0','0','0'], fingers:[0,2,3,0,0,0] },
       'Dm':{ base:1, frets:['x','x','0','2','3','1'], fingers:[0,0,0,2,3,1] },
-      // Barrés usuels
       'Bm':{ base:2, frets:['x','2','4','4','3','2'], fingers:[0,1,3,4,2,1], barres:[{fret:2, from:5, to:1, finger:1}] },
       'F#':{ base:2, frets:['2','4','4','3','2','2'], fingers:[1,3,4,2,1,1], barres:[{fret:2, from:6, to:1, finger:1}] },
       'Gm':{ base:3, frets:['3','5','5','3','3','3'], fingers:[1,3,4,1,1,1], barres:[{fret:3, from:6, to:1, finger:1}] }
     };
 
-    // ===== Utils =====
+    // ===== File -> DataURL
     function fileToDataURL(file){ return new Promise((resolve)=>{ if(!file){ resolve(''); return; } const r=new FileReader(); r.onload=e=>resolve(e.target.result); r.readAsDataURL(file); }); }
+    logoInput.addEventListener('change', async ()=>{ logoPreview.src = await fileToDataURL(logoInput.files[0]); });
+    rhythmImage.addEventListener('change', async ()=>{ rhythmImgPreview.src = await fileToDataURL(rhythmImage.files[0]); });
 
+    // ===== Render parts
     function setMeta(){
       titlePreview.textContent = songTitle.value || 'Titre de la chanson';
       const meta=[];
       if(songArtist.value) meta.push(songArtist.value);
       if(songTempo.value) meta.push((songTempo.value + ' bpm').trim());
       if(songMeter.value) meta.push(songMeter.value.trim());
+      if(songCapo && songCapo.value && String(songCapo.value).trim() !== '0'){ meta.push('Capo '+String(songCapo.value).trim()); }
       metaPreview.textContent = meta.join(' • ') || 'Artiste • Tempo • Mesure';
     }
     function setChords(){
@@ -282,129 +251,48 @@
         pill.textContent=ch;
         chordsPreview.appendChild(pill);
       });
-      maybeSyncChooser();
-      renderDiagramsPreview();
+      renderChooser();
     }
     function setRhythm(){ rhythmTextPreview.textContent = rhythmText.value || ''; }
-    function setInstructions(){ instructionsPreview.textContent = instructionsInput.value || ''; }
 
-    logoInput.addEventListener('change', async ()=>{ logoPreview.src = await fileToDataURL(logoInput.files[0]); });
-    rhythmImage.addEventListener('change', async ()=>{ rhythmImgPreview.src = await fileToDataURL(rhythmImage.files[0]); });
-
-    songTitle.addEventListener('input', setMeta);
-    songArtist.addEventListener('input', setMeta);
-    songTempo.addEventListener('input', setMeta);
-    songMeter.addEventListener('input', setMeta);
-    chordsList.addEventListener('input', setChords);
-    rhythmText.addEventListener('input', setRhythm);
-    instructionsInput.addEventListener('input', setInstructions);
-
-    // ===== Chooser (sélection des diagrammes) =====
-    function allChordNames(){
-      const fromList=(chordsList.value||'').split(',').map(s=>s.trim()).filter(Boolean);
-      const fromImgs=Object.keys(chordImages);
-      const fromBank=Object.keys(chordBank);
-      return Array.from(new Set([...fromList, ...fromImgs, ...fromBank])).sort((a,b)=>a.localeCompare(b, 'en'));
-    }
-    function renderChooser(){
-      const names = allChordNames();
-      diagramChooser.innerHTML='';
-      names.forEach(name=>{
-        const id='chk_'+name.replace(/[^a-z0-9]/gi,'_');
-        const wrap=document.createElement('label');
-        wrap.className='inline-flex items-center gap-1 border rounded-lg px-2 py-1 text-sm cursor-pointer';
-        const cb=document.createElement('input'); cb.type='checkbox'; cb.id=id; cb.checked = selectedChords.size ? selectedChords.has(name) : (chordsList.value||'').includes(name);
-        cb.addEventListener('change', ()=>{ if(cb.checked) selectedChords.add(name); else selectedChords.delete(name); renderDiagramsPreview(); });
-        const span=document.createElement('span'); span.textContent=name;
-        wrap.appendChild(cb); wrap.appendChild(span);
-        diagramChooser.appendChild(wrap);
-      });
-    }
-    function maybeSyncChooser(){
-      if(selectedChords.size===0){ // si aucune sélection explicite, on suit la liste d'accords
-        renderChooser();
-      } else {
-        // La sélection existe, mais on met à jour le chooser au cas où de nouveaux accords apparaissent
-        renderChooser();
-      }
-    }
-    selectAllBtn.addEventListener('click', ()=>{
-      allChordNames().forEach(n=>selectedChords.add(n));
-      renderChooser(); renderDiagramsPreview();
-    });
-    selectNoneBtn.addEventListener('click', ()=>{
-      selectedChords.clear();
-      renderChooser(); renderDiagramsPreview();
-    });
-    syncFromChordsBtn.addEventListener('click', ()=>{
-      selectedChords.clear();
-      (chordsList.value||'').split(',').map(s=>s.trim()).filter(Boolean).forEach(n=>selectedChords.add(n));
-      renderChooser(); renderDiagramsPreview();
-    });
-
-    // ===== Banque auto (import/export + ajout manuel) =====
-    const autoBankToggle = document.getElementById('autoBankToggle');
-    const exportBankBtn = document.getElementById('exportBankBtn');
-    const importBankBtn = document.getElementById('importBankBtn');
-    const bankName = document.getElementById('bankName');
-    const bankBase = document.getElementById('bankBase');
-    const bankFrets = document.getElementById('bankFrets');
-    const bankFingers = document.getElementById('bankFingers');
-    const bankBarres = document.getElementById('bankBarres');
-    const addBankChordBtn = document.getElementById('addBankChordBtn');
-
-    function parseFrets(str){ return str.split(',').map(s=>s.trim()); }
-    function parseNums(str){ return str.split(',').map(s=>Number(s.trim())||0); }
-    function parseBarres(str){
-      // format: "1:6-1; 2:5-2"
-      if(!str) return [];
-      return str.split(';').map(s=>s.trim()).filter(Boolean).map(token=>{
-        const [f,range] = token.split(':');
-        const [from,to] = (range||'').split('-');
-        return { fret:Number(f), from:Number(from), to:Number(to), finger:1 };
+    function renderLyrics(text){
+      lyricsPreview.innerHTML = '';
+      const lines = text.split('\n');
+      lines.forEach(line => {
+        if(line.trim() === ''){ const br = document.createElement('div'); br.className='h-4'; lyricsPreview.appendChild(br); return; }
+        const container = document.createElement('div'); container.className = 'lyrics-line';
+        const tokens = []; let i=0;
+        while(i < line.length){
+          if(line[i] === '['){
+            const j = line.indexOf(']', i);
+            if(j !== -1){ tokens.push({type:'chord', value: line.slice(i+1, j).trim()}); i = j+1; continue; }
+          }
+          let j = i;
+          while(j < line.length && line[j] !== '['){ j++; }
+          tokens.push({type:'text', value: line.slice(i, j)});
+          i = j;
+        }
+        let pendingChord = null;
+        tokens.forEach(tok => {
+          if(tok.type === 'chord'){ pendingChord = tok.value || ''; return; }
+          if(tok.type === 'text'){
+            const parts = tok.value.split(/(\s+)/);
+            parts.forEach(part => {
+              if(/\s+/.test(part)){ const space = document.createElement('span'); space.textContent = part; container.appendChild(space); }
+              else if(part){
+                const wrap = document.createElement('span'); wrap.className = 'word-wrap';
+                if(pendingChord){ const chord = document.createElement('span'); chord.className = 'chord'; chord.textContent = pendingChord; wrap.appendChild(chord); pendingChord = null; }
+                const word = document.createElement('span'); word.textContent = part; wrap.appendChild(word);
+                container.appendChild(wrap);
+              }
+            });
+          }
+        });
+        lyricsPreview.appendChild(container);
       });
     }
 
-    addBankChordBtn.addEventListener('click', ()=>{
-      const name=(bankName.value||'').trim(); if(!name) return;
-      const base=Number((bankBase.value||'1').trim())||1;
-      const frets=parseFrets(bankFrets.value||''); if(!frets.length) return;
-      const fingers=(bankFingers.value||'').trim()? parseNums(bankFingers.value): [];
-      const barres=parseBarres(bankBarres.value||'');
-      chordBank[name]= { base, frets, fingers, barres };
-      bankName.value=''; bankBase.value=''; bankFrets.value=''; bankFingers.value=''; bankBarres.value='';
-      renderDiagramsManager(); renderChooser(); renderDiagramsPreview(); alert('Accord ajouté à la banque.');
-    });
-
-    exportBankBtn.addEventListener('click', ()=>{
-      const data = JSON.stringify(chordBank, null, 2);
-      const blob = new Blob([data], {type:'application/json'});
-      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'banque_accords.json'; a.click(); URL.revokeObjectURL(a.href);
-    });
-    importBankBtn.addEventListener('click', ()=>{
-      const txt = prompt('Colle ici le JSON de ta banque d\\'accords'); if(!txt) return;
-      try{ const obj = JSON.parse(txt); Object.assign(chordBank, obj); renderDiagramsManager(); renderChooser(); renderDiagramsPreview(); alert('Banque importée.'); } catch(e){ alert('JSON invalide.'); }
-    });
-
-    // ===== Module images uploadées =====
-    addDiagBtn.addEventListener('click', async ()=>{
-      const name=(diagName.value||'').trim(); if(!name || !diagFile.files[0]) return;
-      const dataURL = await fileToDataURL(diagFile.files[0]); chordImages[name]=dataURL; diagName.value=''; diagFile.value='';
-      renderDiagramsManager(); renderChooser(); renderDiagramsPreview();
-    });
-    function renderDiagramsManager(){
-      diagramsGrid.innerHTML='';
-      Object.keys(chordImages).sort().forEach(name=>{
-        const card=document.createElement('div'); card.className='diagram-card border rounded-xl p-2 flex flex-col items-center gap-1';
-        const header=document.createElement('div'); header.className='text-xs font-bold mb-1'; header.textContent=name;
-        const img=document.createElement('img'); img.src=chordImages[name]; img.className='max-h-28 object-contain';
-        const del=document.createElement('button'); del.className='mt-1 text-xs px-2 py-1 rounded bg-red-500 text-white'; del.textContent='Supprimer';
-        del.addEventListener('click', ()=>{ delete chordImages[name]; renderDiagramsManager(); renderChooser(); renderDiagramsPreview(); });
-        card.append(header,img,del); diagramsGrid.appendChild(card);
-      });
-    }
-
-    // ===== Rendu SVG d'un accord =====
+    // ===== Diagrams
     function renderChordSVG(def){
       const base = def.base || 1; const frets = def.frets; const fingers = def.fingers || [];
       const barres = def.barres || [];
@@ -413,26 +301,17 @@
       const svgNS='http://www.w3.org/2000/svg';
       const svg=document.createElementNS(svgNS,'svg'); svg.setAttribute('width', w); svg.setAttribute('height', h); svg.setAttribute('viewBox',`0 0 ${w} ${h}`);
 
-      // Cadre
       const frame=document.createElementNS(svgNS,'rect'); frame.setAttribute('x',left-8); frame.setAttribute('y',top-8); frame.setAttribute('width', (stringCount-1)*hGap+16); frame.setAttribute('height', fretCount*vGap+16); frame.setAttribute('fill','none'); frame.setAttribute('stroke','var(--border)'); svg.appendChild(frame);
 
-      // Sillet (base=1) ou n° de case
-      if(base===1){
-        const nut=document.createElementNS(svgNS,'rect'); nut.setAttribute('x',left-8); nut.setAttribute('y',top-12); nut.setAttribute('width',(stringCount-1)*hGap+16); nut.setAttribute('height',6); nut.setAttribute('fill','var(--text)'); svg.appendChild(nut);
-      } else {
-        const txt=document.createElementNS(svgNS,'text'); txt.setAttribute('x', 4); txt.setAttribute('y', top + vGap/2); txt.setAttribute('font-size','10'); txt.setAttribute('fill','var(--muted)'); txt.textContent = base + 'fr'; svg.appendChild(txt);
-      }
+      // (Nut removed intentionally)
 
-      // Cordes
       for(let s=0; s<stringCount; s++){
         const x = left + s*hGap; const line=document.createElementNS(svgNS,'line'); line.setAttribute('x1',x); line.setAttribute('x2',x); line.setAttribute('y1',top); line.setAttribute('y2', top + vGap*fretCount); line.setAttribute('stroke','var(--muted)'); svg.appendChild(line);
       }
-      // Frettes
       for(let f=0; f<=fretCount; f++){
         const y = top + f*vGap; const line=document.createElementNS(svgNS,'line'); line.setAttribute('x1',left); line.setAttribute('x2', left + hGap*(stringCount-1)); line.setAttribute('y1',y); line.setAttribute('y2',y); line.setAttribute('stroke','var(--muted)'); svg.appendChild(line);
       }
 
-      // Ouvertes / Muettes
       for(let s=0; s<stringCount; s++){
         const val = frets[s]; const x = left + s*hGap; const y = top - 10;
         if(val==='x' || val==='X'){
@@ -442,109 +321,274 @@
         }
       }
 
-      // Points
       for(let s=0; s<stringCount; s++){
         const val = frets[s]; const fret = (val==='x'||val==='X'||val==='0'||val===0)? null : Number(val);
         if(!fret) continue;
         const x = left + s*hGap; const y = top + (fret-0.5)*vGap;
         const dot=document.createElementNS(svgNS,'circle'); dot.setAttribute('cx',x); dot.setAttribute('cy',y); dot.setAttribute('r',7); dot.setAttribute('fill','var(--accent)'); svg.appendChild(dot);
-        const finger = fingers[s]||''; if(finger){ const t=document.createElementNS(svgNS,'text'); t.setAttribute('x',x); t.setAttribute('y',y+3); t.setAttribute('text-anchor','middle'); t.setAttribute('font-size','9'); t.setAttribute('fill','#111'); t.textContent=String(finger); svg.appendChild(t); }
+        const finger = fingers[s]||''; if(finger){ const t=document.createElementNS(svgNS,'text'); t.setAttribute('x',x); t.setAttribute('y',y+3); t.setAttribute('text-anchor','middle'); t.setAttribute('font-size','9'); t.setAttribute('fill','#111'); t.textContent=String(finger); }
       }
 
-      // Barres
       (barres||[]).forEach(b=>{
         const x1 = left + (stringCount - b.from)*hGap;
         const x2 = left + (stringCount - b.to)*hGap;
-        const y = top + (b.fret-0.5)*vGap; const rect=document.createElementNS(svgNS,'rect'); rect.setAttribute('x', Math.min(x1,x2)-8); rect.setAttribute('y', y-8); rect.setAttribute('width', Math.abs(x2-x1)+16); rect.setAttribute('height', 16); rect.setAttribute('rx', 8); rect.setAttribute('fill','var(--accent)'); svg.appendChild(rect);
-        if(b.finger){ const t=document.createElementNS(svgNS,'text'); t.setAttribute('x',(x1+x2)/2); t.setAttribute('y',y+3); t.setAttribute('text-anchor','middle'); t.setAttribute('font-size','9'); t.setAttribute('fill','#111'); t.textContent=String(b.finger); svg.appendChild(t); }
+        const y = top + (b.fret-0.5)*vGap;
+        const rect=document.createElementNS(svgNS,'rect'); rect.setAttribute('x', Math.min(x1,x2)-8); rect.setAttribute('y', y-8); rect.setAttribute('width', Math.abs(x2-x1)+16); rect.setAttribute('height', 16); rect.setAttribute('rx', 8); rect.setAttribute('fill','var(--accent)');
+        svg.appendChild(rect);
+        if(b.finger){ const t=document.createElementNS(svgNS,'text'); t.setAttribute('x',(x1+x2)/2); t.setAttribute('y',y+3); t.setAttribute('text-anchor','middle'); t.setAttribute('font-size','9'); t.setAttribute('fill','#111'); t.textContent=String(b.finger); }
       });
 
       return svg;
     }
 
-    function sourceBadge(type){ const span=document.createElement('span'); span.className='text-[10px] px-1.5 py-0.5 rounded-full border'; span.textContent= type; return span; }
-
     function effectiveSelection(){
-      // Si utilisateur a coché des éléments, on prend la sélection. Sinon, par défaut: la liste d'accords.
-      const names = selectedChords.size ? Array.from(selectedChords) : (chordsList.value||'').split(',').map(s=>s.trim()).filter(Boolean);
-      // fallback si vide : ne rien afficher (évite "tous au début de page")
-      return Array.from(new Set(names));
+      if(diagramOrder.length){
+        return diagramOrder.filter(n=>selectedChords.has(n));
+      }
+      return Array.from(selectedChords);
     }
 
     function renderDiagramsPreview(){
+      const diagramsPreview = document.getElementById('diagramsPreview');
       diagramsPreview.innerHTML='';
       const chosen = effectiveSelection();
+      if(chosen.length===0){ return; }
       chosen.forEach(name=>{
         const wrap=document.createElement('div'); wrap.className='diagram-card border rounded-xl p-2 flex flex-col items-center gap-1';
-        // Nom au-dessus du diagramme (notation anglo-saxonne déjà utilisée)
-        const title=document.createElement('div'); title.className='text-sm font-bold'; title.textContent=name || '—';
-        wrap.appendChild(title);
-        let used='';
-        if(chordImages[name]){
-          const img=document.createElement('img'); img.src=chordImages[name]; img.className='max-h-28 object-contain'; wrap.appendChild(img); used='image';
-        } else if(autoBankToggle.checked && chordBank[name]){
-          const svg=renderChordSVG(chordBank[name]); wrap.appendChild(svg); used='auto';
-        } else {
-          const ph=document.createElement('div'); ph.className='text-xs muted h-28 flex items-center justify-center text-center px-2'; ph.textContent='Aucun diagramme : ajoute une image ou un accord à la banque.'; wrap.appendChild(ph); used='-';
-        }
-        const cap=document.createElement('div'); cap.className='text-[10px] font-semibold flex items-center gap-1'; if(used==='image') cap.appendChild(sourceBadge('image')); if(used==='auto') cap.appendChild(sourceBadge('auto'));
-        wrap.appendChild(cap);
+        const title=document.createElement('div'); title.className='text-sm font-bold'; title.textContent=name || '—'; wrap.appendChild(title);
+        if(chordBank[name]){ wrap.appendChild(renderChordSVG(chordBank[name])); }
+        else { const ph=document.createElement('div'); ph.className='text-xs muted h-28 flex items-center justify-center text-center px-2'; ph.textContent='Pas de diagramme pour '+name; wrap.appendChild(ph); }
         diagramsPreview.appendChild(wrap);
       });
     }
 
-    // ===== Lyrics parser ([CHORD]word) =====
-    function renderLyrics(text){
-      lyricsPreview.innerHTML = '';
-      const lines = text.split('\\n');
-      lines.forEach(line => {
-        if(line.trim() === ''){ const br = document.createElement('div'); br.className='h-4'; lyricsPreview.appendChild(br); return; }
-        const container = document.createElement('div'); container.className = 'lyrics-line';
-        const tokens = []; let i=0;
-        while(i < line.length){ if(line[i] === '['){ const j = line.indexOf(']', i); if(j !== -1){ tokens.push({type:'chord', value: line.slice(i+1, j).trim()}); i = j+1; continue; } } let j = i; while(j < line.length && line[j] !== '['){ j++; } tokens.push({type:'text', value: line.slice(i, j)}); i = j; }
-        let pendingChord = null;
-        tokens.forEach(tok => {
-          if(tok.type === 'chord'){ pendingChord = tok.value || ''; return; }
-          if(tok.type === 'text'){
-            const parts = tok.value.split(/(\\s+)/);
-            parts.forEach(part => {
-              if(/\\s+/.test(part)){ const space = document.createElement('span'); space.textContent = part; container.appendChild(space); }
-              else if(part){ const wrap = document.createElement('span'); wrap.className = 'word-wrap'; const word = document.createElement('span'); word.className = 'word'; word.textContent = part; if(pendingChord){ const chord = document.createElement('span'); chord.className = 'chord'; chord.textContent = pendingChord; wrap.appendChild(chord); pendingChord = null; } wrap.appendChild(word); container.appendChild(wrap); }
-            });
-          }
+    // ===== Chooser
+    function allChordNames(){ return (chordsList.value||'').split(',').map(s=>s.trim()).filter(Boolean); }
+    function ensureOrderConsistency(appendMissing=false){
+      diagramOrder = diagramOrder.filter(n=>selectedChords.has(n));
+      Array.from(selectedChords).forEach(n=>{ if(!diagramOrder.includes(n)){ if(appendMissing) diagramOrder.push(n); } });
+    }
+    function renderChooser(){
+      diagramChooser.innerHTML='';
+      const names = allChordNames();
+      Array.from(selectedChords).forEach(n=>{ if(!names.includes(n)) selectedChords.delete(n); });
+      names.forEach(name=>{
+        const wrap=document.createElement('label');
+        wrap.className='inline-flex items-center gap-1 border rounded-lg px-2 py-1 text-sm cursor-pointer';
+        const cb=document.createElement('input'); cb.type='checkbox';
+        cb.checked = selectedChords.size ? selectedChords.has(name) : false;
+        cb.addEventListener('change', ()=>{
+          if(cb.checked){ selectedChords.add(name); if(!diagramOrder.includes(name)) diagramOrder.push(name); }
+          else { selectedChords.delete(name); diagramOrder = diagramOrder.filter(n=>n!==name); }
+          renderOrderList();
+          renderDiagramsPreview();
         });
-        lyricsPreview.appendChild(container);
+        const span=document.createElement('span'); span.textContent=name;
+        wrap.append(cb,span);
+        diagramChooser.appendChild(wrap);
+      });
+      ensureOrderConsistency(true);
+      renderOrderList();
+    }
+    selectAllBtn.addEventListener('click', ()=>{ allChordNames().forEach(n=>selectedChords.add(n)); ensureOrderConsistency(true); renderChooser(); renderDiagramsPreview(); });
+    selectNoneBtn.addEventListener('click', ()=>{ selectedChords.clear(); diagramOrder=[]; renderChooser(); renderDiagramsPreview(); });
+
+    // ===== Ordre (drag & drop + depuis paroles)
+    const orderList = document.getElementById('orderList');
+    const orderFromLyricsBtn = document.getElementById('orderFromLyricsBtn');
+    const orderAlphaBtn = document.getElementById('orderAlphaBtn');
+
+    function chordsFromLyrics(){
+      const text = lyricsInput.value || '';
+      const seq=[]; const seen=new Set();
+      const regex = /\[([^\]]+)\]/g; let m;
+      while((m = regex.exec(text)) !== null){
+        const ch = m[1].trim();
+        if(!seen.has(ch)){ seen.add(ch); seq.push(ch); }
+      }
+      return seq;
+    }
+
+    function renderOrderList(){
+      orderList.innerHTML='';
+      diagramOrder.forEach(name=>{
+        if(!selectedChords.has(name)) return;
+        const li=document.createElement('li');
+        li.className='pill px-2 py-1 rounded-full text-sm font-semibold cursor-move flex items-center justify-between';
+        li.draggable=true; li.dataset.name=name;
+        li.innerHTML=`<span class="truncate">${name}</span><span class="muted text-[10px] ml-2">⋮⋮</span>`;
+        li.addEventListener('dragstart', e=>{ e.dataTransfer.setData('text/plain', name); e.dataTransfer.effectAllowed='move'; });
+        li.addEventListener('dragover', e=>{ e.preventDefault(); e.dataTransfer.dropEffect='move'; });
+        li.addEventListener('drop', e=>{
+          e.preventDefault();
+          const dragged = e.dataTransfer.getData('text/plain');
+          const target = name;
+          if(!dragged || dragged===target) return;
+          const from = diagramOrder.indexOf(dragged);
+          const to = diagramOrder.indexOf(target);
+          diagramOrder.splice(from,1);
+          diagramOrder.splice(to,0,dragged);
+          renderOrderList(); renderDiagramsPreview();
+        });
+        orderList.appendChild(li);
       });
     }
 
-    function renderAll(){ setMeta(); setChords(); setRhythm(); setInstructions(); renderLyrics(lyricsInput.value); renderDiagramsPreview(); }
-    document.getElementById('renderBtn').addEventListener('click', renderAll);
-    lyricsInput.addEventListener('keydown', (e)=>{ if((e.ctrlKey||e.metaKey) && e.key==='Enter'){ e.preventDefault(); renderAll(); } });
+    orderFromLyricsBtn.addEventListener('click', ()=>{
+      const seq = chordsFromLyrics();
+      if(seq.length===0){ alert('Aucun accord détecté dans les paroles.'); return; }
+      selectedChords.clear(); diagramOrder=[];
+      seq.forEach(n=>{ selectedChords.add(n); diagramOrder.push(n); });
+      renderChooser(); renderDiagramsPreview(); renderOrderList();
+    });
+    orderAlphaBtn.addEventListener('click', ()=>{
+      diagramOrder.sort((a,b)=>a.localeCompare(b,'en'));
+      renderOrderList(); renderDiagramsPreview();
+    });
 
-    // ===== Export & Print =====
+    // ===== Global render
+    function renderAll(){
+      setMeta();
+      setChords();
+      setRhythm();
+      instructionsPreview.textContent = instructionsInput.value || '';
+      renderLyrics(lyricsInput.value||'');
+      renderDiagramsPreview();
+    }
+
+    // ===== Export
     async function doExport(){
-      const ok = await waitForLibs(6000); updateDiag(); const JsPDF = getJsPDFCtor();
-      if(!ok || !JsPDF){ alert('Erreur: jsPDF ou html2canvas non chargé.'); return; }
-      const node = document.getElementById('preview'); renderAll();
-      const restoreDark = document.getElementById('themeToggle').checked; const forceWhite = document.getElementById('exportWhiteToggle').checked; if(forceWhite){ setTheme(false); }
+      if(!window.html2canvas || !(window.jspdf && window.jspdf.jsPDF)){
+        alert('Librairies PDF non chargées'); return;
+      }
+      renderAll();
+      const node = document.getElementById('preview');
+      const wasDark = themeToggle.checked;
+      const forceWhite = document.getElementById('exportWhiteToggle').checked;
+      if(forceWhite){ document.documentElement.classList.add('light'); }
       const canvas = await html2canvas(node, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
-      const imgData = canvas.toDataURL('image/png'); const pdf = new JsPDF({ unit:'pt', format:'a4' });
+      const imgData = canvas.toDataURL('image/png'); const pdf = new window.jspdf.jsPDF({ unit:'pt', format:'a4' });
       const pageWidth = pdf.internal.pageSize.getWidth(); const pageHeight = pdf.internal.pageSize.getHeight(); const margin = 24;
       const ratio = Math.min((pageWidth - margin*2) / canvas.width, (pageHeight - margin*2) / canvas.height);
       const imgW = canvas.width * ratio; const imgH = canvas.height * ratio; const x = (pageWidth - imgW)/2; const y = margin;
-      pdf.addImage(imgData, 'PNG', x, y, imgW, imgH); const title = (songTitle.value || 'Fiche_Guitare_Voix') + '.pdf'; pdf.save(title.replace(/\\s+/g,'_'));
-      if(forceWhite && restoreDark){ setTheme(true); }
+      pdf.addImage(imgData, 'PNG', x, y, imgW, imgH);
+      const title = (songTitle.value || 'Fiche_Guitare_Voix') + '.pdf'; pdf.save(title.replace(/\s+/g,'_'));
+      if(forceWhite && wasDark){ document.documentElement.classList.remove('light'); }
     }
-    document.getElementById('exportBtn').addEventListener('click', doExport);
-    document.addEventListener('keydown', (e)=>{ if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='s'){ e.preventDefault(); doExport(); }});
-    document.getElementById('printBtn').addEventListener('click', ()=>{ window.print(); });
 
-    // ===== Demo defaults & diagnostics =====
-    (async function initDemo(){
-      songTitle.value='Perfect'; songArtist.value='Ed Sheeran'; songTempo.value='96'; songMeter.value='4/4'; chordsList.value='G, Em, C, D'; rhythmText.value='Feu de camp : Bas – Bas – Haut – Haut – Bas – Haut';
-      lyricsInput.value='[G]I found a [Em]love for me\\n[C]Darling just dive right in, and [D]follow my lead\\n\\n[G]Well I found a girl, [Em]beautiful and sweet\\n[C]I never knew you were the [D]someone waiting for me';
-      renderChooser(); renderAll(); await waitForLibs(6000); updateDiag();
+    // ===== Wire buttons
+    renderBtn.addEventListener('click', renderAll);
+    exportBtn.addEventListener('click', doExport);
+    printBtn.addEventListener('click', ()=>window.print());
+    lyricsInput.addEventListener('keydown', (e)=>{ if((e.ctrlKey||e.metaKey) && e.key==='Enter'){ e.preventDefault(); renderAll(); } });
+    document.addEventListener('keydown', (e)=>{ if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='s'){ e.preventDefault(); doExport(); }});
+
+    // ===== Songbox (localStorage)
+    const LIB_KEY='gv_songbox_v3';
+    const saveSongBtn = document.getElementById('saveSongBtn');
+    const exportLibBtn = document.getElementById('exportLibBtn');
+    const importLibBtn = document.getElementById('importLibBtn');
+    const libraryList = document.getElementById('libraryList');
+
+    function readLib(){ try{ return JSON.parse(localStorage.getItem(LIB_KEY)||'{}'); } catch{ return {}; } }
+    function writeLib(lib){ localStorage.setItem(LIB_KEY, JSON.stringify(lib)); }
+    function slugify(s){ return (s||'').toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,''); }
+    function makeSongId(title, artist){
+      const base = slugify(title||'sans-titre') + (artist? '-'+slugify(artist): '');
+      return base || ('song-'+Date.now());
+    }
+    async function gather(){
+      let logo = logoPreview && logoPreview.src ? logoPreview.src : '';
+      let rhythmImg = rhythmImgPreview && rhythmImgPreview.src ? rhythmImgPreview.src : '';
+      return {
+        meta: { title: songTitle.value||'', artist: songArtist.value||'' },
+        tempo: songTempo.value||'',
+        meter: songMeter.value||'',
+        capo: songCapo.value||'',
+        chordsList: chordsList.value||'',
+        rhythmText: rhythmText.value||'',
+        rhythmImage: rhythmImg,
+        lyrics: lyricsInput.value||'',
+        instructions: instructionsInput.value||'',
+        selectedChords: Array.from(selectedChords),
+        diagramOrder: Array.from(diagramOrder),
+        logo: logo,
+        themeDark: themeToggle.checked,
+        exportWhite: document.getElementById('exportWhiteToggle').checked
+      };
+    }
+    function apply(data){
+      const m = data.meta||{};
+      songTitle.value=m.title||'';
+      songArtist.value=m.artist||'';
+      songTempo.value=data.tempo||'';
+      songMeter.value=data.meter||'';
+      songCapo.value=data.capo||'';
+      chordsList.value=data.chordsList||'';
+      rhythmText.value=data.rhythmText||'';
+      lyricsInput.value=data.lyrics||'';
+      instructionsInput.value=data.instructions||'';
+      if(data.logo) logoPreview.src=data.logo;
+      if(data.rhythmImage) rhythmImgPreview.src=data.rhythmImage;
+
+      selectedChords.clear();
+      (data.selectedChords||[]).forEach(n=>selectedChords.add(n));
+      diagramOrder = Array.from(data.diagramOrder||[]);
+
+      themeToggle.checked = !!data.themeDark;
+      setTheme(!!data.themeDark);
+      document.getElementById('exportWhiteToggle').checked = !!data.exportWhite;
+
+      renderChooser(); renderAll();
+    }
+    function refreshLibraryList(){
+      const lib = readLib();
+      libraryList.innerHTML='';
+      Object.entries(lib).sort((a,b)=> (a[1].meta.title||'').localeCompare(b[1].meta.title||'','fr')).forEach(([id,rec])=>{
+        const li=document.createElement('li'); li.className='border rounded-xl p-2 flex items-center justify-between gap-2';
+        const info=document.createElement('div'); info.className='min-w-0';
+        const t=document.createElement('div'); t.className='font-semibold truncate'; t.textContent=rec.meta?.title||'Sans titre';
+        const s=document.createElement('div'); s.className='text-xs muted truncate'; s.textContent=rec.meta?.artist||'—';
+        info.append(t,s);
+        const actions=document.createElement('div'); actions.className='flex gap-2';
+        const load=document.createElement('button'); load.className='btn px-2 py-1 rounded-lg text-sm'; load.textContent='Charger'; load.addEventListener('click',()=>apply(rec));
+        const del=document.createElement('button'); del.className='px-2 py-1 rounded-lg text-sm bg-red-500 text-white'; del.textContent='Supprimer'; del.addEventListener('click',()=>{ const lib=readLib(); delete lib[id]; writeLib(lib); refreshLibraryList(); });
+        actions.append(load, del); li.append(info, actions); libraryList.appendChild(li);
+      });
+    }
+    saveSongBtn.addEventListener('click', async ()=>{
+      const data = await gather();
+      let id = makeSongId(data.meta.title, data.meta.artist);
+      const lib = readLib();
+      if(lib[id]){
+        let suffix=2; let newId;
+        do{ newId = id + '-v' + suffix++; } while(lib[newId]);
+        id=newId; data.meta.title = (data.meta.title||'') + ' (copie)';
+      }
+      lib[id]=data; writeLib(lib); refreshLibraryList(); alert('Enregistré dans la Songbox ✔');
+    });
+    exportLibBtn.addEventListener('click', ()=>{
+      const data = JSON.stringify(readLib(), null, 2);
+      const blob = new Blob([data], {type:'application/json'});
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'songbox.json'; a.click(); URL.revokeObjectURL(a.href);
+    });
+    importLibBtn.addEventListener('click', ()=>{
+      const input=document.createElement('input'); input.type='file'; input.accept='application/json';
+      input.onchange=async()=>{ const f=input.files?.[0]; if(!f) return; const text=await f.text(); try{ const obj=JSON.parse(text); const lib=readLib(); Object.assign(lib,obj); writeLib(lib); refreshLibraryList(); alert('Songbox importée ✔'); }catch(e){ alert('JSON invalide'); } };
+      input.click();
+    });
+
+    // ===== Init
+    (function init(){
+      songTitle.value='Perfect'; songArtist.value='Ed Sheeran'; songTempo.value='96'; songMeter.value='12/8'; songCapo.value='';
+      chordsList.value='G, Em, C, D';
+      rhythmText.value='Bas – Haut – Bas – Haut – Bas…';
+      lyricsInput.value='[G]I found a [Em]love for me\n[C]Darling just dive right in, and [D]follow my lead\n\n[G]Well I found a girl, [Em]beautiful and sweet\n[C]I never knew you were the [D]someone waiting for me';
+      renderChooser();
+      refreshLibraryList();
+      renderAll();
     })();
   </script>
 </body>
 </html>
+fix
